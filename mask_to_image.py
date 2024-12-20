@@ -11,14 +11,15 @@ from tqdm.auto import tqdm
 from utils import pad_to_multiple
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--map-dir', type=str, required=True)
 parser.add_argument('--mask-dir', type=str, required=True)
 parser.add_argument('--image-dir', type=str, required=True)
 # parser.add_argument('--label-dir', type=str, required=True)
 parser.add_argument('--output-dir', type=str, required=True)
 
 
-def load_image(image_path):
-    image = np.load(image_path)
+def load_file(file_path):
+    image = np.load(file_path)
     image = pad_to_multiple(image, 16)
     return image
 
@@ -26,40 +27,59 @@ def load_image(image_path):
 def main(args):
     # Prepare output for images
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    output_dir = os.path.join(script_dir, args.output_dir)
-    os.makedirs(output_dir, exist_ok=True)
+    mask_dir = os.path.join(script_dir, args.output_dir, "masks")
+    map_dir = os.path.join(script_dir, args.output_dir, "maps")
+    os.makedirs(mask_dir, exist_ok=True)
+    os.makedirs(map_dir, exist_ok=True)
 
     # Get data
-    mask_paths = sorted(glob.glob(os.path.join(args.mask_dir, "*.npy")))
-    print(f"Masks Found: {len(mask_paths)}")
+    map_paths = sorted(glob.glob(os.path.join(args.map_dir, "*.npy")))
+    print(f"Maps Found: {len(map_paths)}")
 
     cmap = ListedColormap(["black", "red"])
 
-    for mask_path in tqdm(mask_paths):
-        mask_path = pathlib.Path(mask_path)
-        mask = np.load(mask_path)
+    for map_path in tqdm(map_paths):
+        map_path = pathlib.Path(map_path)
+        grad_map = np.load(map_path)
 
-        image_path = os.path.join(args.image_dir, mask_path.name)
-        image = load_image(image_path)
+        image_path = os.path.join(args.image_dir, map_path.name)
+        image = load_file(image_path)
+
+        mask_path = os.path.join(args.mask_dir, map_path.name)
+        mask = load_file(mask_path)
 
         for target_class in range(1, 3):
-            # if np.count_nonzero(mask == target_class) == 0:
-            #     slice_index = mask.shape[0] // 2
-            # else:
-            #     slice_index = np.argmax((mask == target_class).sum(axis=(1, 2)))
-            slice_index = mask.shape[0] // 2
+            if np.count_nonzero(mask == target_class) == 0:
+                slice_index = mask.shape[0] // 2
+            else:
+                slice_index = np.argmax((mask == target_class).sum(axis=(1, 2)))
 
+            grad_map_slice = grad_map[target_class, slice_index, :, :]
             mask_slice = mask[slice_index, :, :]
             image_slice = image[slice_index, :, :]
-            alpha_slice = (mask_slice == target_class) * 0.5
 
+            map_alpha_slice = grad_map_slice / grad_map_slice.max() if grad_map_slice.max() > 0 else 0
+            mask_alpha_slice = (mask_slice == target_class) * 0.5
+
+            # Plot Segmentation
             plt.figure()
             plt.axis("off")
             plt.imshow(image_slice, cmap="gray", vmin=0, vmax=1)
 
-            plt.imshow(mask_slice, cmap=cmap, vmin=0, vmax=1, alpha=alpha_slice)
+            plt.imshow(mask_slice, cmap=cmap, vmin=0, vmax=1, alpha=mask_alpha_slice)
             plt.tight_layout()
-            plt.savefig(os.path.join(output_dir, mask_path.stem + f"_{target_class}"))
+            plt.savefig(os.path.join(mask_dir, mask_path.stem + f"_{target_class}"))
+            plt.close()
+
+            # Plot Grad Map
+            plt.figure()
+            plt.axis("off")
+            plt.imshow(image_slice, cmap="gray", vmin=0, vmax=1)
+
+            plt.imshow(grad_map_slice, cmap='inferno', vmin=0, alpha=map_alpha_slice)
+            plt.colorbar(ticks=[])
+            plt.tight_layout()
+            plt.savefig(os.path.join(map_dir, map_path.stem + f"_{target_class}"))
             plt.close()
 
 
