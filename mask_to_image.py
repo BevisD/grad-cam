@@ -55,7 +55,6 @@ def main(args):
             plt.imshow(image_slice, cmap="gray", vmin=0, vmax=1)
 
             plt.imshow(mask_slice, cmap=cmap, vmin=0, vmax=1, alpha=alpha_slice)
-            plt.colorbar(ticks=[])
             plt.tight_layout()
             plt.savefig(os.path.join(output_dir, mask_path.stem + f"_{target_class}"))
             plt.close()
