@@ -31,7 +31,7 @@ def main(args):
 
     # Get data
     mask_paths = sorted(glob.glob(os.path.join(args.mask_dir, "*.npy")))
-    print(f"Maps Found: {len(mask_paths)}")
+    print(f"Masks Found: {len(mask_paths)}")
 
     cmap = ListedColormap(["black", "red"])
 
