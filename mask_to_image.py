@@ -43,11 +43,11 @@ def main(args):
         image = load_image(image_path)
 
         for target_class in range(1, 3):
-            if np.count_nonzero(mask == target_class) == 0:
-                slice_index = mask.shape[0] // 2
-            else:
-                slice_index = np.argmax((mask == target_class).sum(axis=(1, 2)))
-
+            # if np.count_nonzero(mask == target_class) == 0:
+            #     slice_index = mask.shape[0] // 2
+            # else:
+            #     slice_index = np.argmax((mask == target_class).sum(axis=(1, 2)))
+            slice_index = mask.shape[0] // 2
 
             mask_slice = mask[slice_index, :, :]
             image_slice = image[slice_index, :, :]
