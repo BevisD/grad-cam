@@ -14,7 +14,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--map-dir', type=str, required=True)
 parser.add_argument('--mask-dir', type=str, required=True)
 parser.add_argument('--image-dir', type=str, required=True)
-# parser.add_argument('--label-dir', type=str, required=True)
 parser.add_argument('--output-dir', type=str, required=True)
 
 
@@ -40,7 +39,7 @@ def main(args):
 
     for map_path in tqdm(map_paths):
         map_path = pathlib.Path(map_path)
-        grad_map = np.load(map_path)
+        grad_map = load_file(map_path)
 
         image_path = os.path.join(args.image_dir, map_path.name)
         image = load_file(image_path)
